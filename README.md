@@ -13,13 +13,18 @@ This project sets up a data pipeline using Docker Compose with Elasticsearch, Ki
    - `STACK_VERSION`: Elastic Stack version (default: 9.2.1)
    - `AWS_ACCESS_KEY_ID`: Your AWS access key
    - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+   - `DELIVERY_STREAM_NAME`: Your Kinesis Firehose stream name
+   - `AWS_REGION`: AWS region (default: eu-west-1)
+   - `S3_BUCKET`: Bucket where `logstash` or `youtube.py` should read/write data (e.g. `student-esliheyvaert-bucket`)
 
-2. Copy `aws-credentials.txt.example` to `aws-credentials.txt` and update with your AWS credentials.
+2. Make sure the credentials/region in `.env` match your AWS IAM user (the Compose services only read from `.env`).
 
 3. Run the services:
    ```bash
    docker compose up -d
    ```
+
+4. The YouTube processor uses the same `.env` values when it starts, so no additional credential files are needed inside the container.
 
 ## Services
 
@@ -33,6 +38,8 @@ This project sets up a data pipeline using Docker Compose with Elasticsearch, Ki
 - Logstash pipeline: `logstash/pipeline.conf`
 - Docker Compose: `compose.yml`
 - Environment variables: `.env`
+
+The `.env` file also feeds `youtube.py`, so keep it updated when you change your AWS keys or stream name.
 
 ## Stopping the Services
 

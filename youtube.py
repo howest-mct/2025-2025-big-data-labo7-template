@@ -1,17 +1,42 @@
+import os
 import random
 import time
+import logging
+
+from dotenv import load_dotenv
 import boto3
 import botocore.exceptions
 
-# Make sure this matches your Firehose stream name exactly
-DELIVERY_STREAM_NAME = "student-esli-stream"
+load_dotenv()
 
-# Explicit region to avoid any default-region surprises
-client = boto3.client("firehose", region_name="eu-west-1")
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-with open("/data/exportVideos.json") as file:
-    # Skip header line if there is one
-    # If there is no header, you can remove this line
+DELIVERY_STREAM_NAME = os.getenv("DELIVERY_STREAM_NAME")
+REGION_NAME = os.getenv("AWS_REGION")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+
+logger.info("Using delivery stream: %s", DELIVERY_STREAM_NAME)
+logger.info("Using AWS region: %s", REGION_NAME)
+
+if not all([DELIVERY_STREAM_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY]):
+    logger.error("Missing AWS credentials or stream name, please configure .env")
+    raise SystemExit(1)
+
+client = boto3.client(
+    "firehose",
+    region_name=REGION_NAME,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+)
+
+file_path = "/data/exportVideos.json"
+if not os.path.exists(file_path):
+    logger.error("exportVideos.json not present at %s", file_path)
+    raise SystemExit(1)
+
+with open(file_path) as file:
     _ = file.readline()
 
     for line in file:
@@ -19,16 +44,16 @@ with open("/data/exportVideos.json") as file:
         if not data:
             continue
 
-        print(data)
+        logger.info("Sending data: %s", data[:100])
 
         try:
             client.put_record(
                 DeliveryStreamName=DELIVERY_STREAM_NAME,
-                Record={"Data": data.encode("utf-8")}
+                Record={"Data": data.encode("utf-8")},
             )
         except botocore.exceptions.ClientError as e:
-            print("PutRecord failed:", e)
+            logger.exception("PutRecord failed")
             break
 
-        sleep = random.randint(50, 100) / 50.0  # between 1.0 and 2.0 seconds
+        sleep = random.randint(50, 100) / 50.0
         time.sleep(sleep)

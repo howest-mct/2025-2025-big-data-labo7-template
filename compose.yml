@@ -1,10 +1,16 @@
 services:
   youtube-processor:
     build: ./
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - DELIVERY_STREAM_NAME=${DELIVERY_STREAM_NAME}
+      - AWS_REGION=${AWS_REGION}
     volumes:
-      - ./exportVideos.json:/data/exportVideos.json
-      - ./aws-credentials.txt:/root/.aws/credentials
-      - ./aws-config.txt:/root/.aws/config
-      - ./youtube.py:/root/youtube.py
-    entrypoint: [ "sh", "-c", "sleep 2073600" ]
-    command: [ "python", "/root/youtube.py" ]
+      - ./exportVideos.json:/data/exportVideos.json:ro
+    restart: on-failure
+    networks:
+      - processors
+
+networks:
+  processors:

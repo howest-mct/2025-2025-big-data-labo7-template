@@ -12,12 +12,6 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Solution
-solution/
-
-# AWS credentials
-aws-credentials.txt
-aws-config.txt
 
 # Data files
 exportVideos.json
